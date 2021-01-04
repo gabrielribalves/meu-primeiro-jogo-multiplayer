@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Primeiro Game Multiplayer</title>
+  <style>
+    #tela{
+      border: 10px solid #CCC;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      image-rendering: -moz-crisp-edges;
+      width: 400px;
+      height: 400px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="tela" width="10" height="10"></canvas>
+
+  <script>
+    const canvasTela = document.querySelector('#tela')
+    const context = tela.getContext('2d')
+    const jogadorAtual = 'jogador1'
+
+    
+    function criarJogo(){
+      const state = {
+        jogadores: {
+        jogador1: {x: 1, y: 1},
+        jogador2: {x: 3, y: 1}
+        }, 
+        frutas: {
+          fruta1: {x: 3, y: 5},
+        }
+      }
+    function moverJogador(comando){
+      console.log(`Moving ${comando.jogadorId} with ${comando.teclaPressionada}`);
+
+      const teclaPressionada = comando.teclaPressionada;
+      const jogador = state.jogadores[comando.jogadorId]
+
+      if(teclaPressionada === 'ArrowUp' && jogador.y - 1 >= 0){
+        jogador.y -= 1;
+      }
+      if(teclaPressionada === 'ArrowDown' && jogador.y + 1 < tela.height){
+        jogador.y += 1;
+      }
+      if(teclaPressionada === 'ArrowLeft' && jogador.x - 1 >= 0){
+        jogador.x -= 1;
+      }
+      if(teclaPressionada === 'ArrowRight' && jogador.x + 1 < tela.width){
+        jogador.x += 1;
+      }
+
+    }
+    return {
+      moverJogador,
+      state
+    }
+  }
+
+  const game = criarJogo()
+
+  document.addEventListener('keydown', handleKeydown)
+
+  function handleKeydown(event){
+    const teclaPressionada = event.key;
+
+    const comando = {
+      jogadorId: 'jogador1',
+      teclaPressionada
+    }
+
+    game.moverJogador(comando); 
+  }
+
+  renderTela()
+  function renderTela(){
+    context.fillStyle = 'white'
+    context.clearRect(0, 0,10,10)
+    for (const jogadorId in game.state.jogadores){
+      const jogador = game.state.jogadores[jogadorId]
+      context.fillStyle = 'black'
+      context.fillRect(jogador.x, jogador.y, 1, 1)
+    }
+
+    for(const frutaId in game.state.frutas){
+      const fruta = game.state.frutas[frutaId]
+      context.fillStyle = 'green'
+      context.fillRect(fruta.x, fruta.y, 1, 1)
+    }
+    requestAnimationFrame(renderTela)
+  }
+  // 10:43
+  </script>
+</body>
+</html>
