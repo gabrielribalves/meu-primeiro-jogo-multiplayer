@@ -26,59 +26,152 @@
     
     function criarJogo(){
       const state = {
-        jogadores: {
-        jogador1: {x: 1, y: 1},
-        jogador2: {x: 3, y: 1}
-        }, 
-        frutas: {
-          fruta1: {x: 3, y: 5},
+        jogadores: {}, 
+        frutas: {}
+      }
+
+      function addJogador(comando){
+        const jogadorId = comando.jogadorId
+        const jogadorX = comando.jogadorX
+        const jogadorY = comando.jogadorY
+
+        state.jogadores[jogadorId] = {
+          x: jogadorX,
+          y: jogadorY
+        }
+
+      }
+      function removeJogador(comando){
+        const jogadorId = comando.jogadorId
+
+        delete state.jogadores[jogadorId]
+      }
+
+      function addFruta(comando){
+        const frutaId = comando.frutaId
+        const frutaX = comando.frutaX
+        const frutaY = comando.frutaY
+
+        state.frutas[frutaId] = {
+          x: frutaX,
+          y: frutaY
+        }
+
+      }
+      function removeFruta(comando){
+        const frutaId = comando.frutaId
+
+        delete state.frutas[frutaId]
+      }
+
+    function moverJogador(comando){
+      const aceitarMovimentos = {
+        ArrowUp(jogador){
+          if(jogador.y - 1 >= 0){
+            jogador.y -= 1;
+          }
+        },
+        ArrowRight(jogador){
+          if(jogador.x + 1 < tela.width){
+            jogador.x += 1;
+          }
+        },
+        ArrowDown(jogador){
+          if(jogador.y + 1 < tela.height){
+            jogador.y += 1;
+          }          
+        },
+        ArrowLeft(jogador){
+          if(jogador.x - 1 >= 0){
+            jogador.x -= 1;
+          }          
+        },
+      }
+
+      const teclaPressionada = comando.teclaPressionada
+      const jogadorId = comando.jogadorId
+      const jogador = state.jogadores[jogadorId]
+      const moverFunction = aceitarMovimentos[teclaPressionada]
+
+      if(jogador && moverFunction){
+        moverFunction(jogador)
+        checkColisaoFruta(jogadorId)
+      }
+    }
+
+    function checkColisaoFruta(jogadorId){
+      const jogador = state.jogadores[jogadorId]
+
+      for(const frutaId in state.frutas){
+        const fruta = state.frutas[frutaId]
+        console.log(`Checking ${jogadorId} and ${frutaId}`)
+
+        if(jogador.x === fruta.x && jogador.y === fruta.y){
+          console.log(`COLLISION between ${jogadorId} and ${frutaId}`);
+          removeFruta({frutaId: frutaId})
         }
       }
-    function moverJogador(comando){
-      console.log(`Moving ${comando.jogadorId} with ${comando.teclaPressionada}`);
-
-      const teclaPressionada = comando.teclaPressionada;
-      const jogador = state.jogadores[comando.jogadorId]
-
-      if(teclaPressionada === 'ArrowUp' && jogador.y - 1 >= 0){
-        jogador.y -= 1;
-      }
-      if(teclaPressionada === 'ArrowDown' && jogador.y + 1 < tela.height){
-        jogador.y += 1;
-      }
-      if(teclaPressionada === 'ArrowLeft' && jogador.x - 1 >= 0){
-        jogador.x -= 1;
-      }
-      if(teclaPressionada === 'ArrowRight' && jogador.x + 1 < tela.width){
-        jogador.x += 1;
-      }
-
     }
     return {
+      addJogador,
+      removeJogador, 
+      addFruta,
+      removeFruta,
       moverJogador,
       state
     }
   }
 
   const game = criarJogo()
+  const keyboardListener = criarKeyboardListener()
+  keyboardListener.subscribe(game.moverJogador)
 
-  document.addEventListener('keydown', handleKeydown)
+  game.addJogador({jogadorId: 'jogador1', jogadorX: 0, jogadorY: 0})
+  game.addJogador({jogadorId: 'jogador2', jogadorX: 2, jogadorY: 2})
+  game.addJogador({jogadorId: 'jogador3', jogadorX: 3, jogadorY: 3})
+  game.addFruta({frutaId: 'fruta1', frutaX: 3, frutaY: 4})
+  game.addFruta({frutaId: 'fruta2', frutaX: 4, frutaY: 7})
 
-  function handleKeydown(event){
-    const teclaPressionada = event.key;
-
-    const comando = {
-      jogadorId: 'jogador1',
-      teclaPressionada
+  function criarKeyboardListener(){
+    const state = {
+      observers: []
     }
 
-    game.moverJogador(comando); 
+    function subscribe(observerFunction){
+      state.observers.push(observerFunction)
+    }
+
+    function notifyAll(comando){
+      for (const observerFunction of state.observers){
+        observerFunction(comando)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeydown)
+  
+    function handleKeydown(event){
+      const teclaPressionada = event.key
+  
+      const comando = {
+        jogadorId: 'jogador1',
+        teclaPressionada
+      }
+  
+      notifyAll(comando);
+    }
+
+    return {
+      subscribe
+    }
   }
 
+
   renderTela()
+
   function renderTela(){
     context.fillStyle = 'white'
     context.clearRect(0, 0,10,10)
+
     for (const jogadorId in game.state.jogadores){
       const jogador = game.state.jogadores[jogadorId]
       context.fillStyle = 'black'
@@ -90,9 +183,36 @@
       context.fillStyle = 'green'
       context.fillRect(fruta.x, fruta.y, 1, 1)
     }
+
     requestAnimationFrame(renderTela)
   }
-  // 10:43
+  // ----------------------------------------------------------------
+  // document.addEventListener('keydown', handleKeydown)
+  
+  // function handleKeydown(event){
+  //   const teclaPressionada = event.key
+
+  //   const comando = {
+  //     jogadorId: 'jogador1',
+  //     teclaPressionada
+  //   }
+  // }
+  // if(teclaPressionada === 'ArrowUp' && jogador.y - 1 >= 0){
+  //   jogador.y -= 1;
+  //   return
+  // }
+  // if(teclaPressionada === 'ArrowDown' && jogador.y + 1 < tela.height){
+  //   jogador.y += 1;
+  //   return
+  // }
+  // if(teclaPressionada === 'ArrowLeft' && jogador.x - 1 >= 0){
+  //   jogador.x -= 1;
+  //   return
+  // }
+  // if(teclaPressionada === 'ArrowRight' && jogador.x + 1 < tela.width){
+  //   jogador.x += 1;
+  //   return
+  // }
   </script>
 </body>
 </html>
