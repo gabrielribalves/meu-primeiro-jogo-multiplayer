@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Primeiro Game Multiplayer</title>
+  <style>
+    #tela{
+      border: 10px solid #CCC;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      image-rendering: -moz-crisp-edges;
+      width: 400px;
+      height: 400px;
+    }
+  </style>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <canvas id="tela" width="10" height="10"></canvas>
+
+  <script type="module">
+    import criarJogo from './game.js'
+    import criarKeyboardListener from './keyboard-listener.js'
+    import renderTela from './render-screen.js'
+    
+    const game = criarJogo()
+    const keyboardListener = criarKeyboardListener(document)
+    
+    
+    const socket = io()
+    
+    socket.on('connect', () =>{
+      const jogadorId = socket.id
+      console.log(`Player connected on Client with id: ${jogadorId}`)
+
+      const canvasTela = document.querySelector('#tela')
+      renderTela(canvasTela, game, requestAnimationFrame, jogadorId)
+    })
+    
+    socket.on('setup', (state) => {
+      const jogadorId = socket.id
+      game.setState(state)
+
+      keyboardListener.registerJogadorId(jogadorId)
+      keyboardListener.subscribe(game.moverJogador)
+      keyboardListener.subscribe((comando) =>{
+        socket.emit('move-player', comando)
+      })
+    })
+
+    socket.on('add-jogador', (comando) =>{
+      console.log(`Receiving ${comando.type} -> ${comando.jogadorId}`)
+      game.addJogador(comando)
+    })
+
+    socket.on('remove-jogador', (comando) =>{
+      console.log(`Receiving ${comando.type} -> ${comando.jogadorId}`)
+      game.removeJogador(comando)
+    })
+    
+    socket.on('move-jogador', (comando) =>{
+      console.log(`Receiving ${comando.type} -> ${comando.jogadorId}`)
+      
+      const jogadorId = socket.id
+      
+      if(jogadorId !== comando.jogadorId){
+        game.moverJogador(comando)
+      }
+    })
+  // ----------------------------------------------------------------
+  // document.addEventListener('keydown', handleKeydown)
+  
+  // function handleKeydown(event){
+  //   const teclaPressionada = event.key
+
+  //   const comando = {
+  //     jogadorId: 'jogador1',
+  //     teclaPressionada
+  //   }
+  // }
+  // if(teclaPressionada === 'ArrowUp' && jogador.y - 1 >= 0){
+  //   jogador.y -= 1;
+  //   return
+  // }
+  // if(teclaPressionada === 'ArrowDown' && jogador.y + 1 < tela.height){
+  //   jogador.y += 1;
+  //   return
+  // }
+  // if(teclaPressionada === 'ArrowLeft' && jogador.x - 1 >= 0){
+  //   jogador.x -= 1;
+  //   return
+  // }
+  // if(teclaPressionada === 'ArrowRight' && jogador.x + 1 < tela.width){
+  //   jogador.x += 1;
+  //   return
+  // }
+  </script>
+</body>
+</html>
